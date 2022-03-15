@@ -1,0 +1,19 @@
+[package]
+name = "mabi-pack2"
+version = "1.0.0"
+authors = ["regomne <fallingsunz@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "3"
+byteorder = "1"
+byte-slice-cast = "1"
+regex = "1"
+anyhow = "1"
+miniz_oxide = "0"
+walkdir = "2"
+
+[build-dependencies]
+cc = "1"
