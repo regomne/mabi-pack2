@@ -3,16 +3,16 @@ use anyhow::{Context, Error};
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufReader, Write};
 
-pub fn run_list(fname: &str, output: Option<&str>, skip_validating: bool) -> Result<(), Error> {
+pub fn run_list(fname: &str, output: Option<&str>, check_additional: bool) -> Result<(), Error> {
     let fp = File::open(fname)?;
     let mut rd = BufReader::new(fp);
     let final_file_name = common::get_final_file_name(fname)?;
+    if check_additional {
+        common::check_additional_data(&mut rd, &final_file_name)?;
+    }
     let header = common::read_header(&final_file_name, &mut rd).context("reading header failed")?;
 
-    if !skip_validating {
-        common::validate_header(&header)?;
-    }
-
+    common::validate_header(&header)?;
     if header.version != 2 {
         return Err(Error::msg(format!(
             "header version {} not supported",
@@ -22,9 +22,7 @@ pub fn run_list(fname: &str, output: Option<&str>, skip_validating: bool) -> Res
 
     let entries = common::read_entries(&final_file_name, &header, &mut rd)
         .context("reading entries failed")?;
-    if !skip_validating {
-        common::validate_entries(&entries)?;
-    }
+    common::validate_entries(&entries)?;
 
     let output_stream: Result<Box<dyn Write>, Error> =
         output.map_or(Ok(Box::new(io::stdout())), |path| {
