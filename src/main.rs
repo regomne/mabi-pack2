@@ -4,15 +4,15 @@ mod common;
 mod encryption;
 mod extract;
 mod list;
-//mod pack;
+mod pack;
 
 fn main() {
     let args = Command::new("Mabinogi pack utilities 2")
-        .version("v1.0.0")
+        .version("v1.1.0")
         .author("regomne <fallingsunz@gmail.com>")
         .subcommand(
             Command::new("pack")
-                .about("Create a .it pack (not supported yet)")
+                .about("Create a .it pack")
                 .arg(arg!(-i --input <FOLDER> "Set the input folder to pack"))
                 .arg(arg!(-o --output <PACK_NAME> "Set the output .it file name")),
         )
@@ -27,7 +27,7 @@ fn main() {
                         .number_of_values(1)
                 )
                 .arg(
-                    arg!(-c --validate_checksum "validate checksum of files, break when failed")
+                    arg!(-s --skip-validate "skip validating checksum of files")
                 ),
         )
         .subcommand(
@@ -39,7 +39,7 @@ fn main() {
                         .required(false)
                 )
                 .arg(
-                    arg!(-c --validate_checksum "validate checksum of files, break when failed")
+                    arg!(-c --skip-validate "skip validating checksum of files")
                 ),
         )
         .get_matches();
@@ -48,7 +48,7 @@ fn main() {
         list::run_list(
             matches.value_of("input").unwrap(),
             matches.value_of("output"),
-            matches.is_present("validate_checksum"),
+            matches.is_present("skip-validate"),
         )
     } else if let Some(matches) = args.subcommand_matches("extract") {
         extract::run_extract(
@@ -58,15 +58,13 @@ fn main() {
                 .values_of("filter")
                 .map(|e| e.collect())
                 .unwrap_or(vec![]),
-            matches.is_present("validate_checksum"),
+            matches.is_present("skip-validate"),
         )
-    } else if let Some(_matches) = args.subcommand_matches("pack") {
-        //pack::run_pack(
-        //    matches.value_of("input").unwrap(),
-        //    matches.value_of("output").unwrap(),
-        //)
-        println!("packing not supported yet");
-        Ok(())
+    } else if let Some(matches) = args.subcommand_matches("pack") {
+        pack::run_pack(
+            matches.value_of("input").unwrap(),
+            matches.value_of("output").unwrap(),
+        )
     } else {
         println!("please select a subcommand (type --help to get details)");
         Ok(())

@@ -28,7 +28,7 @@ SUBCOMMANDS:
     extract    Extract a .it pack
     help       Print this message or the help of the given subcommand(s)
     list       Output the file list of a .it pack
-    pack       Create a .it pack (not supported yet)
+    pack       Create a .it pack
 ```
 
 To extract all `.xml` and `.txt` files from a pack:
@@ -41,6 +41,12 @@ To list all files of a pack:
 
 ```
 mabi-pack2 list -i D:\Mabinogi\package\data_00000.it
+```
+
+To pack files to a .it file:
+
+```
+mabi-pack2 pack -i D:\Mabinogi\pkg -o a.it
 ```
 
 *Note:* Renaming of \*.it files is not allowed, or extracting and listing will fail.

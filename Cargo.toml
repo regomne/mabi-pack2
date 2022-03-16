@@ -1,6 +1,6 @@
 [package]
 name = "mabi-pack2"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["regomne <fallingsunz@gmail.com>"]
 edition = "2021"
 
