@@ -106,7 +106,7 @@ where
     let key = encryption::gen_header_key(salted_name.as_bytes());
     let offset = encryption::gen_header_offset(fname.as_bytes());
     rd.seek(SeekFrom::Start(offset as u64))?;
-    let mut dec_stream = encryption::Decoder::new(&key, rd);
+    let mut dec_stream = encryption::Snow2Decoder::new(&key, rd);
     Ok(FileHeader::new(&mut dec_stream)?)
 }
 
@@ -134,7 +134,7 @@ where
     //println!("entry offset: {:x}", offset_entry);
     rd.seek(SeekFrom::Start((offset_header + offset_entry) as u64))?;
 
-    let mut dec_stream = encryption::Decoder::new(&key, rd);
+    let mut dec_stream = encryption::Snow2Decoder::new(&key, rd);
     (0..header.file_cnt)
         .map(|_| FileEntry::new(&mut dec_stream).map_err(Error::new))
         .collect()

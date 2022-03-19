@@ -1,10 +1,8 @@
 use cc;
 
 fn main() {
-    cc::Build::new()
-        .file("src/enc_table.c")
-        .file("src/enc.c")
-        .compile("c_enc");
-    println!("cargo:rerun-if-changed=src/enc_table.c");
-    println!("cargo:rerun-if-changed=src/enc.c");
+    cc::Build::new().file("src/snow2_fast.c").compile("c_snow2");
+    println!("cargo:rerun-if-changed=src/snow2.h");
+    println!("cargo:rerun-if-changed=src/snow2tab.h");
+    println!("cargo:rerun-if-changed=src/snow2_fast.c");
 }

@@ -43,13 +43,13 @@ pub fn gen_file_key(input: &[u8], key2: &[u8]) -> Vec<u8> {
 }
 
 extern "C" {
-    fn c_init_enc_state(state1: *mut u32, key: *const u8) -> i32;
-    fn c_update_enc_state(state1: *mut u32, enc_stream: *mut u32) -> i32;
+    fn c_snow2_loadkey(state_table: *mut u32, key: *const u8);
+    fn c_snow2_generate_keystream(state_table: *mut u32, stream: *mut u32);
 }
 
-pub struct Decoder<'a, T: Read> {
-    state1: [u32; 20],
-    dec_stream: [u32; 16],
+pub struct Snow2Decoder<'a, T: Read> {
+    state_table: [u32; 18],
+    keystream: [u32; 16],
     cur_index: usize,
     rd: &'a mut T,
 
@@ -57,11 +57,11 @@ pub struct Decoder<'a, T: Read> {
     left_buffer_len: usize,
 }
 
-impl<'a, T: Read> Decoder<'a, T> {
+impl<'a, T: Read> Snow2Decoder<'a, T> {
     pub fn new(key: &[u8], reader: &'a mut T) -> Box<Self> {
-        let mut r = Box::new(Decoder {
-            state1: [0; 20],
-            dec_stream: [0; 16],
+        let mut r = Box::new(Snow2Decoder {
+            state_table: [0; 18],
+            keystream: [0; 16],
             cur_index: 0,
             rd: reader,
 
@@ -69,20 +69,20 @@ impl<'a, T: Read> Decoder<'a, T> {
             left_buffer_len: 0,
         });
         unsafe {
-            c_init_enc_state(r.state1.as_mut_ptr(), key.as_ptr());
-            r.update_enc_state();
+            c_snow2_loadkey(r.state_table.as_mut_ptr(), key.as_ptr());
+            r.generate_key_stream();
         }
         r
     }
 
-    fn update_enc_state(&mut self) {
+    fn generate_key_stream(&mut self) {
         unsafe {
-            c_update_enc_state(self.state1.as_mut_ptr(), self.dec_stream.as_mut_ptr());
+            c_snow2_generate_keystream(self.state_table.as_mut_ptr(), self.keystream.as_mut_ptr());
         }
     }
 }
 
-impl<'a, T: Read> Read for Decoder<'a, T> {
+impl<'a, T: Read> Read for Snow2Decoder<'a, T> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let new_reading_len = buf.len() - self.left_buffer_len;
         let dec_block_len = (new_reading_len + 3) & 0usize.wrapping_sub(4);
@@ -94,11 +94,11 @@ impl<'a, T: Read> Read for Decoder<'a, T> {
             let v = reader_ori
                 .read_u32::<LittleEndian>()
                 .unwrap()
-                .wrapping_sub(self.dec_stream[self.cur_index]);
+                .wrapping_sub(self.keystream[self.cur_index]);
             writer_new.write_u32::<LittleEndian>(v)?;
             self.cur_index += 1;
             if self.cur_index >= 16 {
-                self.update_enc_state();
+                self.generate_key_stream();
                 self.cur_index = 0;
             }
         }
@@ -112,9 +112,9 @@ impl<'a, T: Read> Read for Decoder<'a, T> {
     }
 }
 
-pub struct Encoder<'a, T: Write> {
-    state1: [u32; 20],
-    dec_stream: [u32; 16],
+pub struct Snow2Encoder<'a, T: Write> {
+    state_table: [u32; 18],
+    keystream: [u32; 16],
     cur_index: usize,
     wr: &'a mut T,
 
@@ -122,11 +122,11 @@ pub struct Encoder<'a, T: Write> {
     left_buffer_len: usize,
 }
 
-impl<'a, T: Write> Encoder<'a, T> {
+impl<'a, T: Write> Snow2Encoder<'a, T> {
     pub fn new(key: &[u8], writer: &'a mut T) -> Box<Self> {
-        let mut r = Box::new(Encoder {
-            state1: [0; 20],
-            dec_stream: [0; 16],
+        let mut r = Box::new(Snow2Encoder {
+            state_table: [0; 18],
+            keystream: [0; 16],
             cur_index: 0,
             wr: writer,
 
@@ -134,8 +134,8 @@ impl<'a, T: Write> Encoder<'a, T> {
             left_buffer_len: 0,
         });
         unsafe {
-            c_init_enc_state(r.state1.as_mut_ptr(), key.as_ptr());
-            r.update_enc_state();
+            c_snow2_loadkey(r.state_table.as_mut_ptr(), key.as_ptr());
+            r.generate_keystream();
         }
         r
     }
@@ -149,14 +149,14 @@ impl<'a, T: Write> Encoder<'a, T> {
         Ok(())
     }
 
-    fn update_enc_state(&mut self) {
+    fn generate_keystream(&mut self) {
         unsafe {
-            c_update_enc_state(self.state1.as_mut_ptr(), self.dec_stream.as_mut_ptr());
+            c_snow2_generate_keystream(self.state_table.as_mut_ptr(), self.keystream.as_mut_ptr());
         }
     }
 }
 
-impl<'a, T: Write> Write for Encoder<'a, T> {
+impl<'a, T: Write> Write for Snow2Encoder<'a, T> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let need_writing_len = buf.len() + self.left_buffer_len;
         let enc_block_len = need_writing_len & 0usize.wrapping_sub(4);
@@ -178,11 +178,11 @@ impl<'a, T: Write> Write for Encoder<'a, T> {
                 ori_buff
                     .read_u32::<LittleEndian>()
                     .unwrap()
-                    .wrapping_add(self.dec_stream[self.cur_index]),
+                    .wrapping_add(self.keystream[self.cur_index]),
             )?;
             self.cur_index += 1;
             if self.cur_index >= 16 {
-                self.update_enc_state();
+                self.generate_keystream();
                 self.cur_index = 0;
             }
         }
@@ -197,9 +197,67 @@ impl<'a, T: Write> Write for Encoder<'a, T> {
     }
 }
 
-impl<'a, T: Write> Drop for Encoder<'a, T> {
+impl<'a, T: Write> Drop for Snow2Encoder<'a, T> {
     fn drop(&mut self) {
         self.end_encoding().expect("writing failed");
         self.flush().expect("flushing failed");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn header_offset() {
+        let off = gen_header_offset("data_00000.it".as_bytes());
+        assert_eq!(off, 0x6a);
+    }
+
+    #[test]
+    fn header_key() {
+        let name = "data_00000.it".to_owned() + KEY_SALT;
+        let key = gen_header_key(name.as_bytes());
+        assert_eq!(
+            key[..16],
+            [
+                0x64, 0x62, 0x76, 0x64, 0x63, 0x35, 0x36, 0x37, 0x38, 0x39, 0x38, 0x74, 0x80, 0x4d,
+                0x44, 0x60
+            ]
+        );
+    }
+
+    #[test]
+    fn entries_offset() {
+        let off = gen_entries_offset("data_00000.it".as_bytes());
+        assert_eq!(off, 0x6e);
+    }
+
+    #[test]
+    fn entries_key() {
+        let name = "data_00000.it".to_owned() + KEY_SALT;
+        let key = gen_entries_key(name.as_bytes());
+        assert_eq!(
+            key[..16],
+            [
+                0x72, 0x6a, 0xb6, 0x87, 0x2d, 0x6d, 0xde, 0xe5, 0xa4, 0x91, 0x2d, 0x47, 0xf6, 0x9,
+                0xa2, 0xb1
+            ]
+        );
+    }
+
+    #[test]
+    fn decoder() {
+        let name = "data_00000.it".to_owned() + KEY_SALT;
+        let key = gen_header_key(name.as_bytes());
+
+        let ciphered_text = [
+            0x37u8, 0x62, 0x6D, 0x63, 0x82, 0x03, 0x09, 0xD0, 0x24, 0x73, 0xBE, 0xA9,
+        ];
+        let mut cur = Cursor::new(ciphered_text);
+        let mut rd = Snow2Decoder::new(&key, &mut cur);
+        assert_eq!(rd.read_u32::<LittleEndian>().unwrap(), 0x4b5);
+        assert_eq!(rd.read_u8().unwrap(), 2);
+        assert_eq!(rd.read_u32::<LittleEndian>().unwrap(), 0x4b3);
     }
 }

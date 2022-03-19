@@ -33,7 +33,7 @@ where
     let fkey = encryption::gen_file_key(ent.name.as_bytes(), &ent.key);
 
     if (ent.flags & common::FLAG_ALL_ENCRYPTED) != 0 {
-        let mut dec_stm = encryption::Decoder::new(&fkey, stm);
+        let mut dec_stm = encryption::Snow2Decoder::new(&fkey, stm);
         dec_stm.read_exact(&mut content)?;
     } else {
         stm.read_exact(&mut content)?;
@@ -41,7 +41,7 @@ where
 
     if (ent.flags & common::FLAG_HEAD_ENCRYPTED) != 0 {
         let mut rd = Cursor::new(&content);
-        let mut dec_stm = encryption::Decoder::new(&fkey, &mut rd);
+        let mut dec_stm = encryption::Snow2Decoder::new(&fkey, &mut rd);
         let mut content2 = [0u8; 1024];
         let dec_len = std::cmp::min(content.len(), 1024);
         dec_stm.read_exact(&mut content2[..dec_len])?;

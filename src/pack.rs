@@ -55,7 +55,7 @@ where
 {
     const IT_VERSION: u8 = 2;
     let checksum = file_cnt + IT_VERSION as u32;
-    let mut enc_stm = encryption::Encoder::new(key, wr);
+    let mut enc_stm = encryption::Snow2Encoder::new(key, wr);
     enc_stm.write_u32::<LittleEndian>(checksum)?;
     enc_stm.write_u8(IT_VERSION)?;
     enc_stm.write_u32::<LittleEndian>(file_cnt)?;
@@ -66,7 +66,7 @@ fn write_entries<T>(entries: &[FileEntry], key: &[u8], wr: &mut T) -> Result<(),
 where
     T: Write,
 {
-    let mut enc_stm = encryption::Encoder::new(key, wr);
+    let mut enc_stm = encryption::Snow2Encoder::new(key, wr);
     entries
         .iter()
         .map(|ent| -> Result<(), Error> {
