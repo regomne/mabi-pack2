@@ -30,7 +30,7 @@ where
 {
     stm.seek(SeekFrom::Start(start_off + ent.offset as u64 * 1024))?;
     let mut content = vec![0u8; ent.raw_size as usize];
-    let fkey = encryption::gen_file_key(ent.name.as_bytes(), &ent.key);
+    let fkey = encryption::gen_file_key(&ent.name, &ent.key);
 
     if (ent.flags & common::FLAG_ALL_ENCRYPTED) != 0 {
         let mut dec_stm = encryption::Snow2Decoder::new(&fkey, stm);

@@ -102,9 +102,8 @@ pub fn read_header<T>(fname: &str, rd: &mut T) -> Result<FileHeader, Error>
 where
     T: Read + Seek,
 {
-    let salted_name = fname.to_owned() + encryption::KEY_SALT;
-    let key = encryption::gen_header_key(salted_name.as_bytes());
-    let offset = encryption::gen_header_offset(fname.as_bytes());
+    let key = encryption::gen_header_key(&fname);
+    let offset = encryption::gen_header_offset(&fname);
     rd.seek(SeekFrom::Start(offset as u64))?;
     let mut dec_stream = encryption::Snow2Decoder::new(&key, rd);
     Ok(FileHeader::new(&mut dec_stream)?)
@@ -126,10 +125,9 @@ pub fn read_entries<T>(
 where
     T: Read + Seek,
 {
-    let salted_name = fname.to_owned() + encryption::KEY_SALT;
-    let key = encryption::gen_entries_key(salted_name.as_bytes());
-    let offset_header = encryption::gen_header_offset(fname.as_bytes());
-    let offset_entry = encryption::gen_entries_offset(fname.as_bytes());
+    let key = encryption::gen_entries_key(&fname);
+    let offset_header = encryption::gen_header_offset(&fname);
+    let offset_entry = encryption::gen_entries_offset(&fname);
     //println!("header offset: {:x}", offset_header);
     //println!("entry offset: {:x}", offset_entry);
     rd.seek(SeekFrom::Start((offset_header + offset_entry) as u64))?;

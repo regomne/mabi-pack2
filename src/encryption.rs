@@ -1,32 +1,41 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{self, Cursor, Read, Write};
 
-pub const KEY_SALT: &str = "@6QeTuOaDgJlZcBm#9";
+const KEY_SALT: &str = "@6QeTuOaDgJlZcBm#9";
 
-pub fn gen_header_key(input: &[u8]) -> Vec<u8> {
+pub fn gen_header_key(name: &str) -> Vec<u8> {
+    let s = name.to_ascii_lowercase() + KEY_SALT;
+    let input = s.as_bytes();
     (0..128)
         .map(|i| input[i % input.len()].wrapping_add(i as u8))
         .collect()
 }
 
-pub fn gen_header_offset(input: &[u8]) -> usize {
+pub fn gen_header_offset(name: &str) -> usize {
+    let s = name.to_ascii_lowercase();
+    let input = s.as_bytes();
     let sum = input.iter().fold(0, |sum, c| sum + *c as usize);
     sum % 312 + 30
 }
 
-pub fn gen_entries_key(input: &[u8]) -> Vec<u8> {
+pub fn gen_entries_key(name: &str) -> Vec<u8> {
+    let s = name.to_ascii_lowercase() + KEY_SALT;
+    let input = s.as_bytes();
     let len = input.len();
     (0..128)
         .map(|i| (i + (i % 3 + 2) * input[len - 1 - i % len] as usize) as u8)
         .collect()
 }
 
-pub fn gen_entries_offset(input: &[u8]) -> usize {
+pub fn gen_entries_offset(name: &str) -> usize {
+    let s = name.to_ascii_lowercase();
+    let input = s.as_bytes();
     let r = input.iter().fold(0, |r, c| r + *c as usize * 3);
     r % 212 + 42
 }
 
-pub fn gen_file_key(input: &[u8], key2: &[u8]) -> Vec<u8> {
+pub fn gen_file_key(name: &str, key2: &[u8]) -> Vec<u8> {
+    let input = name.as_bytes();
     assert_eq!(key2.len(), 16);
     (0..128)
         .map(|i| {
@@ -210,14 +219,13 @@ mod tests {
 
     #[test]
     fn header_offset() {
-        let off = gen_header_offset("data_00000.it".as_bytes());
+        let off = gen_header_offset("data_00000.it");
         assert_eq!(off, 0x6a);
     }
 
     #[test]
     fn header_key() {
-        let name = "data_00000.it".to_owned() + KEY_SALT;
-        let key = gen_header_key(name.as_bytes());
+        let key = gen_header_key("data_00000.it");
         assert_eq!(
             key[..16],
             [
@@ -229,14 +237,13 @@ mod tests {
 
     #[test]
     fn entries_offset() {
-        let off = gen_entries_offset("data_00000.it".as_bytes());
+        let off = gen_entries_offset("data_00000.it");
         assert_eq!(off, 0x6e);
     }
 
     #[test]
     fn entries_key() {
-        let name = "data_00000.it".to_owned() + KEY_SALT;
-        let key = gen_entries_key(name.as_bytes());
+        let key = gen_entries_key("data_00000.it");
         assert_eq!(
             key[..16],
             [
@@ -248,8 +255,7 @@ mod tests {
 
     #[test]
     fn decoder() {
-        let name = "data_00000.it".to_owned() + KEY_SALT;
-        let key = gen_header_key(name.as_bytes());
+        let key = gen_header_key("data_00000.it");
 
         let ciphered_text = [
             0x37u8, 0x62, 0x6D, 0x63, 0x82, 0x03, 0x09, 0xD0, 0x24, 0x73, 0xBE, 0xA9,
@@ -263,8 +269,7 @@ mod tests {
 
     #[test]
     fn decoder2() {
-        let name = "data_00000.it".to_owned() + KEY_SALT;
-        let key = gen_entries_key(name.as_bytes());
+        let key = gen_entries_key("data_00000.it");
 
         let ciphered_text = [
             0x8Bu8, 0xD6, 0xBF, 0xE6, 0xAD, 0x7E, 0xE9, 0xE7, 0x64, 0x95, 0xF0, 0xBB, 0x08, 0x0E,

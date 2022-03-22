@@ -8,7 +8,7 @@ mod pack;
 
 fn main() {
     let args = Command::new("Mabinogi pack utilities 2")
-        .version("v1.2.1")
+        .version("v1.2.2")
         .author("regomne <fallingsunz@gmail.com>")
         .subcommand(
             Command::new("pack")

@@ -103,11 +103,10 @@ pub fn run_pack(input_folder: &str, output_fname: &str, add_data: bool) -> Resul
         .sum::<usize>();
 
     let final_file_name = common::get_final_file_name(output_fname)?;
-    let salted_name = final_file_name.clone() + encryption::KEY_SALT;
-    let header_off = encryption::gen_header_offset(final_file_name.as_bytes());
-    let entries_off = encryption::gen_entries_offset(final_file_name.as_bytes());
-    let header_key = encryption::gen_header_key(salted_name.as_bytes());
-    let entries_key = encryption::gen_entries_key(salted_name.as_bytes());
+    let header_off = encryption::gen_header_offset(&final_file_name);
+    let entries_off = encryption::gen_entries_offset(&final_file_name);
+    let header_key = encryption::gen_header_key(&final_file_name);
+    let entries_key = encryption::gen_entries_key(&final_file_name);
 
     if add_data && final_file_name.len() > 25 {
         return Err(Error::msg(
