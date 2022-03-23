@@ -4,23 +4,24 @@ use std::io::{self, Cursor, Read, Write};
 const KEY_SALT: &str = "@6QeTuOaDgJlZcBm#9";
 
 pub fn gen_header_key(name: &str) -> Vec<u8> {
-    let s = name.to_ascii_lowercase() + KEY_SALT;
-    let input = s.as_bytes();
+    let input: Vec<u16> = (name.to_ascii_lowercase() + KEY_SALT)
+        .encode_utf16()
+        .collect();
     (0..128)
-        .map(|i| input[i % input.len()].wrapping_add(i as u8))
+        .map(|i| input[i % input.len()].wrapping_add(i as u16) as u8)
         .collect()
 }
 
 pub fn gen_header_offset(name: &str) -> usize {
-    let s = name.to_ascii_lowercase();
-    let input = s.as_bytes();
+    let input: Vec<u16> = name.to_ascii_lowercase().encode_utf16().collect();
     let sum = input.iter().fold(0, |sum, c| sum + *c as usize);
     sum % 312 + 30
 }
 
 pub fn gen_entries_key(name: &str) -> Vec<u8> {
-    let s = name.to_ascii_lowercase() + KEY_SALT;
-    let input = s.as_bytes();
+    let input: Vec<u16> = (name.to_ascii_lowercase() + KEY_SALT)
+        .encode_utf16()
+        .collect();
     let len = input.len();
     (0..128)
         .map(|i| (i + (i % 3 + 2) * input[len - 1 - i % len] as usize) as u8)
@@ -28,14 +29,13 @@ pub fn gen_entries_key(name: &str) -> Vec<u8> {
 }
 
 pub fn gen_entries_offset(name: &str) -> usize {
-    let s = name.to_ascii_lowercase();
-    let input = s.as_bytes();
+    let input: Vec<u16> = name.to_ascii_lowercase().encode_utf16().collect();
     let r = input.iter().fold(0, |r, c| r + *c as usize * 3);
     r % 212 + 42
 }
 
 pub fn gen_file_key(name: &str, key2: &[u8]) -> Vec<u8> {
-    let input = name.as_bytes();
+    let input: Vec<u16> = name.encode_utf16().collect();
     assert_eq!(key2.len(), 16);
     (0..128)
         .map(|i| {
@@ -44,9 +44,9 @@ pub fn gen_file_key(name: &str, key2: &[u8]) -> Vec<u8> {
                     key2[i % key2.len()]
                         .wrapping_sub(i as u8 / 5 * 5)
                         .wrapping_add(2)
-                        .wrapping_add(i as u8),
+                        .wrapping_add(i as u8) as u16,
                 )
-                .wrapping_add(i as u8)
+                .wrapping_add(i as u16) as u8
         })
         .collect()
 }
