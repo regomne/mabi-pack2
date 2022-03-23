@@ -5,8 +5,6 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
-pub const IT_CUSTOM_MAGIC: u32 = 0x3ef613f9;
-
 pub struct FileHeader {
     pub checksum: u32,
     pub version: u8,
@@ -71,31 +69,6 @@ pub fn get_final_file_name(fname: &str) -> Result<String, Error> {
         .file_name()
         .ok_or(Error::msg("not a valid file path"))
         .map(|s| s.to_str().expect("not a valid unicode string").to_owned())
-}
-
-pub fn check_additional_data<T>(rd: &mut T, fname: &str) -> Result<bool, Error>
-where
-    T: Read,
-{
-    let magic = rd.read_u32::<LittleEndian>()?;
-    if magic != IT_CUSTOM_MAGIC {
-        return Ok(false);
-    }
-    let flen = rd.read_u8()? as usize;
-    if flen > 25 {
-        return Ok(false);
-    }
-    let mut str_buf = [0u8; 25];
-    rd.read_exact(&mut str_buf[..flen])?;
-
-    let origin_fname = String::from_utf8_lossy(&str_buf[..flen]).to_owned();
-    if origin_fname != fname {
-        return Err(Error::msg(format!(
-            "file name not match, which should be {}",
-            origin_fname
-        )));
-    }
-    Ok(true)
 }
 
 pub fn read_header<T>(fname: &str, rd: &mut T) -> Result<FileHeader, Error>

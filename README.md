@@ -46,7 +46,7 @@ mabi-pack2 list -i D:\Mabinogi\package\data_00000.it
 To pack files to a .it file:
 
 ```
-mabi-pack2 pack -i D:\Mabinogi\pkg -o a.it
+mabi-pack2 pack -i D:\Mabinogi\pkg -o zz_00.it
 ```
 
 *Note:* Renaming of \*.it files is not allowed, or extracting and listing will fail.

@@ -88,7 +88,7 @@ fn ceil_1024(v: u64) -> u64 {
     (v + 1023) & 0u64.wrapping_sub(1024)
 }
 
-pub fn run_pack(input_folder: &str, output_fname: &str, add_data: bool) -> Result<(), Error> {
+pub fn run_pack(input_folder: &str, output_fname: &str) -> Result<(), Error> {
     let file_names: Vec<String> = WalkDir::new(input_folder)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -107,12 +107,6 @@ pub fn run_pack(input_folder: &str, output_fname: &str, add_data: bool) -> Resul
     let entries_off = encryption::gen_entries_offset(&final_file_name);
     let header_key = encryption::gen_header_key(&final_file_name);
     let entries_key = encryption::gen_entries_key(&final_file_name);
-
-    if add_data && final_file_name.len() > 25 {
-        return Err(Error::msg(
-            "file name too long when has --aditional-data, max is 25",
-        ));
-    }
 
     let fs = OpenOptions::new()
         .create(true)
@@ -139,13 +133,6 @@ pub fn run_pack(input_folder: &str, output_fname: &str, add_data: bool) -> Resul
 
     stm.seek(SeekFrom::Start(header_off as u64))?;
     write_header(entries.len() as u32, &header_key, &mut stm).context("writing header failed")?;
-
-    if add_data {
-        stm.seek(SeekFrom::Start(0))?;
-        stm.write_u32::<LittleEndian>(common::IT_CUSTOM_MAGIC)?;
-        stm.write_u8(final_file_name.len() as u8)?;
-        stm.write_all(final_file_name.as_bytes())?;
-    }
 
     Ok(())
 }

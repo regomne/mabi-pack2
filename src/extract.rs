@@ -70,18 +70,10 @@ fn make_regex(strs: Vec<&str>) -> Result<Vec<Regex>, Error> {
         .collect()
 }
 
-pub fn run_extract(
-    fname: &str,
-    output_folder: &str,
-    filters: Vec<&str>,
-    check_additional: bool,
-) -> Result<(), Error> {
+pub fn run_extract(fname: &str, output_folder: &str, filters: Vec<&str>) -> Result<(), Error> {
     let fp = File::open(fname)?;
     let mut rd = BufReader::new(fp);
     let final_file_name = common::get_final_file_name(fname)?;
-    if check_additional {
-        common::check_additional_data(&mut rd, &final_file_name)?;
-    }
     let header = common::read_header(&final_file_name, &mut rd).context("reading header failed")?;
 
     common::validate_header(&header)?;
