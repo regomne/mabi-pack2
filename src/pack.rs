@@ -23,6 +23,7 @@ fn need_compress(fname: &str) -> bool {
         || fname.ends_with(".dds")
         || fname.ends_with(".pmg")
         || fname.ends_with(".set")
+        || fname.ends_with(".raw")
 }
 
 fn pack_file(root_dir: &str, rel_path: &str) -> Result<(FileEntry, Vec<u8>), Error> {
