@@ -3,8 +3,8 @@ use crate::encryption;
 use anyhow::{Context, Error};
 use miniz_oxide::inflate::decompress_to_vec_zlib;
 use regex::Regex;
-use std::fs::{File, OpenOptions};
-use std::io::{BufReader, Cursor, Read, Seek, SeekFrom, Write};
+use std::fs::{self, File};
+use std::io::{BufReader, Cursor, Read, Seek, SeekFrom};
 use std::path::{Path, MAIN_SEPARATOR};
 
 fn write_file(root_dir: &str, rel_path: &str, content: Vec<u8>) -> Result<(), Error> {
@@ -13,9 +13,8 @@ fn write_file(root_dir: &str, rel_path: &str, content: Vec<u8>) -> Result<(), Er
         "unrecognized path: {}",
         fname.to_string_lossy().to_owned()
     )))?;
-    std::fs::create_dir_all(par)?;
-    let mut fs = OpenOptions::new().create(true).write(true).open(fname)?;
-    fs.write_all(&content)?;
+    fs::create_dir_all(par)?;
+    fs::write(fname, &content)?;
     Ok(())
 }
 

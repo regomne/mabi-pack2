@@ -112,6 +112,7 @@ pub fn run_pack(input_folder: &str, output_fname: &str) -> Result<(), Error> {
     let fs = OpenOptions::new()
         .create(true)
         .write(true)
+        .truncate(true)
         .open(output_fname)?;
     let mut stm = BufWriter::new(fs);
 
