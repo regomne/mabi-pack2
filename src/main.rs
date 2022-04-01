@@ -8,7 +8,7 @@ mod pack;
 
 fn main() {
     let args = Command::new("Mabinogi pack utilities 2")
-        .version("v1.3.0")
+        .version("v1.3.1")
         .author("regomne <fallingsunz@gmail.com>")
         .subcommand(
             Command::new("pack")
@@ -16,6 +16,11 @@ fn main() {
                 .arg(arg!(-i --input <FOLDER> "Set the input folder to pack"))
                 .arg(arg!(-o --output <PACK_NAME> "Set the output .it file name"))
                 .arg(arg!(-a --additional_data "DEPRECATED: Add original filename to package").hide(true))
+                .arg(
+                    arg!(-f --"compress-format" <EXTENSTION> ... "Add an extension to compress in .it (Default: txt xml dds pmg set raw)")
+                        .required(false)
+                        .number_of_values(1)
+                )
         )
         .subcommand(
             Command::new("extract")
@@ -68,6 +73,10 @@ fn main() {
         pack::run_pack(
             matches.value_of("input").unwrap(),
             matches.value_of("output").unwrap(),
+            matches
+                .values_of("compress-format")
+                .map(|e| e.collect())
+                .unwrap_or(vec![]),
         )
     } else {
         println!("please select a subcommand (type --help to get details)");
