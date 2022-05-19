@@ -1,5 +1,7 @@
 # Mabinogi Pack Utilities 2
 
+**It seems that the game developers don't want their packages being unpacked, so this repository WILL NOT UPDATE ANY MORE.**
+
 New pack utilities for Mabinogi.
 
 Works on *.it* packages.
